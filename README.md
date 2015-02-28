@@ -8,7 +8,7 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/silvamfilipe/http-message.svg?style=flat-square)](https://packagist.org/packages/silvamfilipe/http-message)
 
 PSR Http Message compliant package. The goal is to have an HTTP message abstraction
-that can bused to implement a request/response strategy application.
+that can be used to implement a request/response strategy application.
 
 This package is compliant with PSR-2 code standards and PSR-4 autoload standards. It
 also applies the [semantic version 2.0.0](http://semver.org) specification.
@@ -24,7 +24,21 @@ $ composer require fsilva/http-message
 ## Usage
 
 ``` php
-// ToDo
+use Fsilva/HttpMessage/Message;
+use Fsilva/HttpMessage/Stream/Buffer;
+
+$message = new Message();
+$body = new Buffer();
+
+$request = $message->withHeader('X-Requested-With', 'XMLHttpRequest')
+    ->withHeader('User-Agent', 'PHP Request call')
+    ->withBody($body)
+    ->withoutHeader('pragma')
+    ->withAddedHeader('X-Forwarded-For', ['client1', 'proxy1', 'proxy2]);
+    
+$request->hasHeader('User-Agent');  // Returns true
+$request->getHeaders();     // Returns an associative array where header names are keys
+                            // and values are array containing header values.
 ```
 
 ## Testing
