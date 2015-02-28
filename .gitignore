@@ -29,7 +29,7 @@ nb-configuration.xml
 /*.sublime-project
 *.sublime-workspace
 
-build
 composer.lock
+composer.phar
 docs
 vendor

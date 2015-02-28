@@ -1,19 +1,7 @@
 #Changelog
-All Notable changes to `:package_name` will be documented in this file
+All Notable changes to `Fsilva\HttpMessage` will be documented in this file
 
-## NEXT - YYYY-MM-DD
+## 0.1.0 - 2015-02-28
 
 ### Added
-- Nothing
-
-### Deprecated
-- Nothing
-
-### Fixed
-- Nothing
-
-### Remove
-- Nothing
-
-### Security
-- Nothing
+- HTTP message
