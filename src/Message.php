@@ -46,8 +46,11 @@ class Message implements MessageInterface
     /** @var string HTTP protocol version, default to 1.1 */
     private $protocolVersion = self::HTTP_1_1;
 
-    /** @var string[] message's headers */
+    /** @var string[]|array message's headers */
     private $headers = [];
+
+    /** @var StreamableInterface */
+    private $body;
 
     /**
      * Retrieves the HTTP protocol version as a string.
@@ -126,6 +129,11 @@ class Message implements MessageInterface
     public function hasHeader($name)
     {
         $found = false;
+
+        if (!is_string($name)) {
+            return $found;
+        }
+
         foreach ($this->headers as $headerName => $value) {
             if (strtolower($headerName) == strtolower($name)) {
                 $found = true;
@@ -151,26 +159,7 @@ class Message implements MessageInterface
      */
     public function getHeader($name)
     {
-        if (!is_string($name)) {
-            throw new InvalidArgumentException(
-                "The header name can only be a string"
-            );
-        }
-
-        if (!$this->hasHeader($name)) {
-            throw new MissingHeaderException(
-                "The header your are trying to retrieve does not exists in " .
-                "the HTTP message."
-            );
-        }
-
-        $value = [];
-        foreach ($this->getHeaders() as $headerName => $value) {
-            if (strtolower($headerName) == strtolower($name)) {
-                break;
-            }
-        }
-        return implode(', ', $value);
+        return implode(', ', $this->getHeaderLines($name));
     }
 
     /**
@@ -181,7 +170,14 @@ class Message implements MessageInterface
      */
     public function getHeaderLines($name)
     {
-        // TODO: Implement getHeaderLines() method.
+        $this->checkHeaderName($name);
+        $value = [];
+        foreach ($this->getHeaders() as $headerName => $value) {
+            if (strtolower($headerName) == strtolower($name)) {
+                break;
+            }
+        }
+        return $value;
     }
 
     /**
@@ -202,13 +198,13 @@ class Message implements MessageInterface
      */
     public function withHeader($name, $value)
     {
-        $value = is_string($value) ? [$value] : $value;
+        $value = $this->checkHeaderNameAndValue($name, $value);
 
         $message = clone($this);
         if ($message->hasHeader($name)) {
             $names = array_keys($message->headers);
-            foreach($names as $key) {
-                if (strtolower($key) == $name) {
+            foreach ($names as $key) {
+                if (strtolower($key) == strtolower($name)) {
                     unset($message->headers[$key]);
                     break;
                 }
@@ -237,7 +233,24 @@ class Message implements MessageInterface
      */
     public function withAddedHeader($name, $value)
     {
-        // TODO: Implement withAddedHeader() method.
+        $value = $this->checkHeaderNameAndValue($name, $value);
+
+        $message = clone($this);
+        if ($message->hasHeader($name)) {
+            foreach ($message->headers as $key => $val) {
+                if (strtolower($key) == strtolower($name)) {
+                    /** @var string[] $val */
+                    foreach ($value as $newValue) {
+                        $message->headers[$key][] = $newValue;
+                    }
+                    break;
+                }
+            }
+        } else {
+            $message->headers[$name] = $value;
+        }
+
+        return $message;
     }
 
     /**
@@ -254,7 +267,19 @@ class Message implements MessageInterface
      */
     public function withoutHeader($name)
     {
-        // TODO: Implement withoutHeader() method.
+        $message = clone($this);
+
+        if ($message->hasHeader($name)) {
+            $names = array_keys($message->headers);
+            foreach ($names as $key) {
+                if (strtolower($key) == strtolower($name)) {
+                    unset($message->headers[$key]);
+                    break;
+
+                }
+            }
+        }
+        return $message;
     }
 
     /**
@@ -264,7 +289,7 @@ class Message implements MessageInterface
      */
     public function getBody()
     {
-        // TODO: Implement getBody() method.
+        return $this->body;
     }
 
     /**
@@ -282,6 +307,79 @@ class Message implements MessageInterface
      */
     public function withBody(StreamableInterface $body)
     {
-        // TODO: Implement withBody() method.
+        $message = clone($this);
+        $message->body = $body;
+        return $message;
+    }
+
+    /**
+     * Checks if the provided name is a string and if an header with that
+     * name exists in the message's headers.
+     *
+     * @see Message::getHeader()
+     * @see Message::getHeaderLines()
+     *
+     * @param mixed $name
+     */
+    private function checkHeaderName($name)
+    {
+        if (!is_string($name)) {
+            throw new InvalidArgumentException(
+                "The header name can only be a string"
+            );
+        }
+
+        if (!$this->hasHeader($name)) {
+            throw new MissingHeaderException(
+                "The header your are trying to retrieve does not exists in " .
+                "the HTTP message."
+            );
+        }
+    }
+
+    /**
+     * Checks if the provided header name is a string and if the value is a
+     * string or an array of strings.
+     *
+     * @see Message::withHeader()
+     * @see Message::withAddedHeader()
+     *
+     * @param mixed $name
+     * @param mixed $value
+     *
+     * @return string[]
+     */
+    private function checkHeaderNameAndValue($name, $value)
+    {
+        if (!is_string($name)) {
+            throw new InvalidArgumentException(
+                "The header name can only be a string"
+            );
+        }
+
+        $allStrings = true;
+
+        if (!is_string($value) && !is_array($value)) {
+            throw new InvalidArgumentException(
+                "The header value for {$name} can only be a string or " .
+                "array of strings."
+            );
+        }
+
+        $value = is_string($value) ? [$value] : $value;
+
+        array_walk($value, function($element) use (&$allStrings) {
+            if (!is_string($element)) {
+                $allStrings = false;
+            }
+        });
+
+        if (!$allStrings) {
+            throw new InvalidArgumentException(
+                "The header value for {$name} is not an array of strings."
+            );
+        }
+
+        return $value;
     }
 }

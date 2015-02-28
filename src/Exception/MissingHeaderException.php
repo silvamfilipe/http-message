@@ -9,7 +9,7 @@
 
 namespace Fsilva\HttpMessage\Exception;
 
-use LogicException;
+use RuntimeException;
 use Fsilva\HttpMessage\Exception;
 
 /**
@@ -19,7 +19,7 @@ use Fsilva\HttpMessage\Exception;
  * @package Fsilva\HttpMessage\Exception
  * @author  Filipe Silva <silvam.filipe@gmail.com>
  */
-class MissingHeaderException extends LogicException implements Exception
+class MissingHeaderException extends RuntimeException implements Exception
 {
 
 }
