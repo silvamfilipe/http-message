@@ -56,7 +56,7 @@ $request = $message->withProtocolVersion(Message::HTTP_1_1)
     ->withHeader('User-Agent', 'PHP Request call')
     ->withBody($body)
     ->withoutHeader('pragma')
-    ->withAddedHeader('X-Forwarded-For', ['client1', 'proxy1', 'proxy2]);
+    ->withAddedHeader('X-Forwarded-For', ['client1', 'proxy1', 'proxy2']);
     
 $strMessage = "GET / HTTP/". $request->getProtocolVersion();
 
