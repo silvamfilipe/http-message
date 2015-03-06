@@ -9,12 +9,17 @@
 
 namespace Fsilva\HttpMessage\Exception;
 
+use LogicException;
+use Fsilva\HttpMessage\Exception;
 
 /**
- * Class InvalidSchemeException
+ * This exception is thrown when a tentative of creating an URI with an
+ * invalid or unsupported scheme occurs.
+ *
  * @package Fsilva\HttpMessage\Exception
+ * @author  Filipe Silva <silvam.filipe@gmail.com>
  */
-class InvalidSchemeException
+class InvalidSchemeException extends LogicException implements Exception
 {
 
 }
