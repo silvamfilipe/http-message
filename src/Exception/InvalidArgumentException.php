@@ -10,7 +10,7 @@
 namespace Fsilva\HttpMessage\Exception;
 
 use Fsilva\HttpMessage\Exception;
-use LogicException;
+use InvalidArgumentException as PhpException;
 
 /**
  * An InvalidArgumentException exception is thrown when a tentative to call
@@ -21,7 +21,7 @@ use LogicException;
  * @package Fsilva\HttpMessage\Exception
  * @author  Filipe Silva
  */
-class InvalidArgumentException extends LogicException implements Exception
+class InvalidArgumentException extends PhpException implements Exception
 {
 
 }

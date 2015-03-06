@@ -9,17 +9,20 @@
 
 namespace Fsilva\HttpMessage;
 
+use Fsilva\HttpMessage\Exception\InvalidArgumentException;
 use Psr\Http\Message\UriInterface;
+use Fsilva\HttpMessage\Exception\InvalidHostNameException;
+use Fsilva\HttpMessage\Exception\InvalidSchemeException;
 
 /**
  * Value object representing a URI for use in HTTP requests.
  *
  * Instances of this interface are considered immutable; all methods that
- * might change state MUST be implemented such that they retain the internal
+ * might change state are implemented such that they retain the internal
  * state of the current instance and return a new instance that contains the
  * changed state.
  *
- * Typically the Host header will be also be present in the request message.
+ * Typically the Host header will also be present in the request message.
  * For server-side requests, the scheme will typically be discoverable in the
  * server parameters.
  *
@@ -36,17 +39,50 @@ class Uri implements UriInterface
     private $schemes = ['http', 'https', ''];
 
     /**
+     * @var array Default scheme ports
+     */
+    private $defaultPorts = [
+        'http' => '80',
+        'https' => '443'
+    ];
+
+    /**
+     * @var string URI scheme
+     */
+    private $scheme = '';
+
+    /**
+     * @var string User name
+     */
+    private $user = '';
+
+    /**
+     * @var string User password
+     */
+    private $password = '';
+
+    /**
+     * @var string URI host name
+     */
+    private $host = '';
+
+    /**
+     * @var string Host port
+     */
+    private $port = '';
+
+    /**
      * Retrieve the URI scheme.
      *
-     * If no scheme is present, this method MUST return an empty string.
+     * If no scheme is present, this method returns an empty string.
      *
-     * The string returned MUST omit the trailing "://" delimiter if present.
+     * The string returned omits the trailing "://" delimiter if present.
      *
      * @return string The scheme of the URI.
      */
     public function getScheme()
     {
-        // TODO: Implement getScheme() method.
+        return $this->scheme;
     }
 
     /**
@@ -61,7 +97,7 @@ class Uri implements UriInterface
      * If the port component is not set or is the standard port for the current
      * scheme, it SHOULD NOT be included.
      *
-     * This method MUST return an empty string if no authority information is
+     * This method returns an empty string if no authority information is
      * present.
      *
      * @return string Authority portion of the URI, in "[user-info@]host[:port]"
@@ -92,34 +128,44 @@ class Uri implements UriInterface
     /**
      * Retrieve the host segment of the URI.
      *
-     * This method MUST return a string; if no host segment is present, an
-     * empty string MUST be returned.
+     * This method returns a string; if no host segment is present, an
+     * empty string in then returned.
      *
      * @return string Host segment of the URI.
      */
     public function getHost()
     {
-        // TODO: Implement getHost() method.
+        return $this->host;
     }
 
     /**
      * Retrieve the port segment of the URI.
      *
      * If a port is present, and it is non-standard for the current scheme,
-     * this method MUST return it as an integer. If the port is the standard port
-     * used with the current scheme, this method SHOULD return null.
+     * this method returns it as an integer. If the port is the standard port
+     * used with the current scheme, this method returns null.
      *
-     * If no port is present, and no scheme is present, this method MUST return
-     * a null value.
-     *
-     * If no port is present, but a scheme is present, this method MAY return
-     * the standard port for that scheme, but SHOULD return null.
+     * If no port is present this method returns a null value.
      *
      * @return null|int The port for the URI.
      */
     public function getPort()
     {
-        // TODO: Implement getPort() method.
+        $port = null;
+        $standard = ($this->scheme != '') ?
+            $this->defaultPorts[$this->getScheme()] : 0;
+
+        if ($this->port == '') {
+            return null;
+        }
+
+        $port = intval($this->port);
+
+        if ($this->port == $standard) {
+            $port = null;
+        }
+
+        return $port;
     }
 
     /**
@@ -172,19 +218,31 @@ class Uri implements UriInterface
      * a new instance that contains the specified scheme. If the scheme
      * provided includes the "://" delimiter, it will be removed.
      *
-     * Implementations SHOULD restrict values to "http", "https", or an empty
-     * string but MAY accommodate other schemes if required.
+     * A scheme can only be one of the following values: "http", "https",
+     * or an empty string.
      *
      * An empty scheme is equivalent to removing the scheme.
      *
      * @param string $scheme The scheme to use with the new instance.
      *
      * @return self A new instance with the specified scheme.
-     * @throws \InvalidArgumentException for invalid or unsupported schemes.
+     * @throws \InvalidArgumentException|InvalidSchemeException for invalid or
+     * unsupported schemes.
      */
     public function withScheme($scheme)
     {
-        // TODO: Implement withScheme() method.
+        $message = "Invalid or unsupported scheme. Supported schemes are " .
+            "http, https or '' (empty string).";
+        if (!is_string($scheme)) {
+            throw new InvalidSchemeException($message);
+        }
+        $scheme = strtolower(str_replace('://', '', $scheme));
+        if (!in_array($scheme, $this->schemes, true)) {
+            throw new InvalidSchemeException($message);
+        }
+        $uri = clone($this);
+        $uri->scheme = $scheme;
+        return $uri;
     }
 
     /**
@@ -210,7 +268,7 @@ class Uri implements UriInterface
     /**
      * Create a new instance with the specified host.
      *
-     * This method MUST retain the state of the current instance, and return
+     * This method retains the state of the current instance, and returns
      * a new instance that contains the specified host.
      *
      * An empty host value is equivalent to removing the host.
@@ -222,16 +280,25 @@ class Uri implements UriInterface
      */
     public function withHost($host)
     {
-        // TODO: Implement withHost() method.
+        $valid = Validator::isValid('hotsname', $host);
+        if (!$valid && $host != '') {
+            throw new InvalidHostNameException(
+                "The hostname '{$host}' ist not valid."
+            );
+        }
+
+        $uri = clone($this);
+        $uri->host = $host;
+        return $uri;
     }
 
     /**
      * Create a new instance with the specified port.
      *
-     * This method MUST retain the state of the current instance, and return
+     * This method retains the state of the current instance, and return
      * a new instance that contains the specified port.
      *
-     * Implementations MUST raise an exception for ports outside the
+     * An exception is raise for ports outside the
      * established TCP and UDP port ranges.
      *
      * A null value provided for the port is equivalent to removing the port
@@ -245,7 +312,25 @@ class Uri implements UriInterface
      */
     public function withPort($port)
     {
-        // TODO: Implement withPort() method.
+        $clearPort = ($port === '');
+        $port = intval($port);
+        $isDefault = in_array($port, $this->defaultPorts);
+        $udpTcp = $port >= 1024 && $port <= 49151;
+
+        if (!$isDefault && !$udpTcp && !$clearPort) {
+            throw new InvalidArgumentException(
+                "The port {$port} is not valid."
+            );
+        }
+
+        if ($clearPort) {
+            $port = '';
+        }
+
+        $uri = clone($this);
+        $uri->port = $port;
+
+        return $uri;
     }
 
     /**
