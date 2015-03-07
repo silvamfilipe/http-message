@@ -9,10 +9,10 @@
 
 namespace Fsilva\HttpMessage;
 
-use Fsilva\HttpMessage\Exception\InvalidArgumentException;
 use Psr\Http\Message\UriInterface;
-use Fsilva\HttpMessage\Exception\InvalidHostNameException;
 use Fsilva\HttpMessage\Exception\InvalidSchemeException;
+use Fsilva\HttpMessage\Exception\InvalidArgumentException;
+use Fsilva\HttpMessage\Exception\InvalidHostNameException;
 
 /**
  * Value object representing a URI for use in HTTP requests.
@@ -59,7 +59,7 @@ class Uri implements UriInterface
     /**
      * @var string User password
      */
-    private $password = '';
+    private $password;
 
     /**
      * @var string URI host name
@@ -70,6 +70,21 @@ class Uri implements UriInterface
      * @var string Host port
      */
     private $port = '';
+
+    /**
+     * @var string Path segment of the URI
+     */
+    private $path = '';
+
+    /**
+     * @var string Query segment of the URI
+     */
+    private $query = '';
+
+    /**
+     * @var string The fragment of the URI
+     */
+    private $fragment = '';
 
     /**
      * Retrieve the URI scheme.
@@ -95,7 +110,7 @@ class Uri implements UriInterface
      * </pre>
      *
      * If the port component is not set or is the standard port for the current
-     * scheme, it SHOULD NOT be included.
+     * scheme, it will not be included.
      *
      * This method returns an empty string if no authority information is
      * present.
@@ -105,7 +120,12 @@ class Uri implements UriInterface
      */
     public function getAuthority()
     {
-        // TODO: Implement getAuthority() method.
+        $authority = ($this->user !== '') ? $this->getUserInfo() .'@' : '';
+        $port = '';
+        if (!is_null($this->getPort())) {
+            $port = ':'. $this->getPort();
+        }
+        return $authority.$this->getHost().$port;
     }
 
     /**
@@ -115,14 +135,19 @@ class Uri implements UriInterface
      * additionally, if the password is also present, it will be appended to the
      * user value, with a colon (":") separating the values.
      *
-     * Implementations MUST NOT return the "@" suffix when returning this value.
+     * It will not return the "@" suffix when returning user information.
      *
      * @return string User information portion of the URI, if present, in
      *     "username[:password]" format.
      */
     public function getUserInfo()
     {
-        // TODO: Implement getUserInfo() method.
+        $format = '%s%s';
+        if (!is_null($this->password) && $this->password !== '') {
+            $format = '%s:%s';
+        }
+
+        return sprintf($format, $this->user, $this->password);
     }
 
     /**
@@ -151,7 +176,6 @@ class Uri implements UriInterface
      */
     public function getPort()
     {
-        $port = null;
         $standard = ($this->scheme != '') ?
             $this->defaultPorts[$this->getScheme()] : 0;
 
@@ -171,44 +195,44 @@ class Uri implements UriInterface
     /**
      * Retrieve the path segment of the URI.
      *
-     * This method MUST return a string; if no path is present it MUST return
+     * This method always return a string; if no path is present it will return
      * an empty string.
      *
      * @return string The path segment of the URI.
      */
     public function getPath()
     {
-        // TODO: Implement getPath() method.
+        return $this->path;
     }
 
     /**
      * Retrieve the query string of the URI.
      *
-     * This method MUST return a string; if no query string is present, it MUST
-     * return an empty string.
+     * This method will always return a string; if no query string is present,
+     * it returns an empty string.
      *
-     * The string returned MUST omit the leading "?" character.
+     * The string returned omits the leading "?" character.
      *
      * @return string The URI query string.
      */
     public function getQuery()
     {
-        // TODO: Implement getQuery() method.
+        return $this->query;
     }
 
     /**
      * Retrieve the fragment segment of the URI.
      *
-     * This method MUST return a string; if no fragment is present, it MUST
+     * This method always returns a string; if no fragment is present, it will
      * return an empty string.
      *
-     * The string returned MUST omit the leading "#" character.
+     * The string returned will always omit the leading "#" character.
      *
      * @return string The URI fragment.
      */
     public function getFragment()
     {
-        // TODO: Implement getFragment() method.
+        return $this->fragment;
     }
 
     /**
@@ -236,22 +260,22 @@ class Uri implements UriInterface
         if (!is_string($scheme)) {
             throw new InvalidSchemeException($message);
         }
-        $scheme = strtolower(str_replace('://', '', $scheme));
-        if (!in_array($scheme, $this->schemes, true)) {
+        $cleaned = strtolower(str_replace('://', '', $scheme));
+        if (!in_array($cleaned, $this->schemes, true)) {
             throw new InvalidSchemeException($message);
         }
         $uri = clone($this);
-        $uri->scheme = $scheme;
+        $uri->scheme = $cleaned;
         return $uri;
     }
 
     /**
      * Create a new instance with the specified user information.
      *
-     * This method MUST retain the state of the current instance, and return
+     * This method retains the state of the current instance, and return
      * a new instance that contains the specified user information.
      *
-     * Password is optional, but the user information MUST include the
+     * Password is optional, but the user information includes the
      * user; an empty string for the user is equivalent to removing user
      * information.
      *
@@ -262,7 +286,10 @@ class Uri implements UriInterface
      */
     public function withUserInfo($user, $password = null)
     {
-        // TODO: Implement withUserInfo() method.
+        $uri = clone($this);
+        $uri->user = $user;
+        $uri->password = $password;
+        return $uri;
     }
 
     /**
@@ -336,11 +363,10 @@ class Uri implements UriInterface
     /**
      * Create a new instance with the specified path.
      *
-     * This method MUST retain the state of the current instance, and return
+     * This method retains the state of the current instance, and return
      * a new instance that contains the specified path.
      *
-     * The path MUST be prefixed with "/"; if not, the implementation MAY
-     * provide the prefix itself.
+     * The path will be prefixed with "/" if not present
      *
      * An empty path value is equivalent to removing the path.
      *
@@ -351,16 +377,26 @@ class Uri implements UriInterface
      */
     public function withPath($path)
     {
-        // TODO: Implement withPath() method.
+        if (preg_match('/\s/', $path)) {
+            throw new InvalidArgumentException(
+                "The path '{$path}' contains invalid characters."
+            );
+        }
+
+        $path = rtrim(str_replace('//', '/', ('/'. $path)), '/');
+
+        $uri = clone($this);
+        $uri->path = $path;
+        return $uri;
     }
 
     /**
      * Create a new instance with the specified query string.
      *
-     * This method MUST retain the state of the current instance, and return
+     * This method retains the state of the current instance, and return
      * a new instance that contains the specified query string.
      *
-     * If the query string is prefixed by "?", that character MUST be removed.
+     * If the query string is prefixed by "?", that character will be removed.
      * Additionally, the query string SHOULD be parseable by parse_str() in
      * order to be valid.
      *
@@ -373,16 +409,24 @@ class Uri implements UriInterface
      */
     public function withQuery($query)
     {
-        // TODO: Implement withQuery() method.
+        if (!is_string($query)) {
+            throw new InvalidArgumentException(
+                'The query must be an URI formatted string.'
+            );
+        }
+        $query = ltrim($query, '?');
+        $uri = clone($this);
+        $uri->query = $query;
+        return $uri;
     }
 
     /**
      * Create a new instance with the specified URI fragment.
      *
-     * This method MUST retain the state of the current instance, and return
+     * This method retains the state of the current instance, and return
      * a new instance that contains the specified URI fragment.
      *
-     * If the fragment is prefixed by "#", that character MUST be removed.
+     * If the fragment is prefixed by "#", that character will be removed.
      *
      * An empty fragment value is equivalent to removing the fragment.
      *
@@ -392,7 +436,10 @@ class Uri implements UriInterface
      */
     public function withFragment($fragment)
     {
-        // TODO: Implement withFragment() method.
+        $fragment = ltrim($fragment, '#');
+        $uri = clone($this);
+        $uri->fragment = $fragment;
+        return $uri;
     }
 
     /**
@@ -401,16 +448,17 @@ class Uri implements UriInterface
      * Concatenates the various segments of the URI, using the appropriate
      * delimiters:
      *
-     * - If a scheme is present, "://" MUST append the value.
+     * - If a scheme is present, "://" will append the value.
      * - If the authority information is present, that value will be
      *   concatenated.
-     * - If a path is present, it MUST be prefixed by a "/" character.
-     * - If a query string is present, it MUST be prefixed by a "?" character.
-     * - If a URI fragment is present, it MUST be prefixed by a "#" character.
+     * - If a path is present, it will be prefixed by a "/" character.
+     * - If a query string is present, it will be prefixed by a "?" character.
+     * - If a URI fragment is present, it will be prefixed by a "#" character.
      *
      * @return string
      */
     public function __toString()
     {
-        // TODO: Implement __toString() method.
-}}
+
+    }
+}

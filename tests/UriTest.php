@@ -205,4 +205,68 @@ class UriTest extends TestCase
         $this->assertInstanceOf('Psr\\Http\\Message\\UriInterface', $new);
         $this->assertNotSame($old, $new);
     }
+
+    public function testUserInfo()
+    {
+        $uri = new Uri();
+        $new = $uri->withUserInfo('foo', 'pass');
+        $this->checkMutation($uri, $new);
+        $this->assertEquals('foo:pass', $new->getUserInfo());
+
+        $other = $new->withUserInfo('user');
+        $this->assertEquals('user', $other->getUserInfo());
+    }
+
+    public function testGetAuthority()
+    {
+        $uri = new Uri();
+        $uri = $uri->withHost('example.com');
+
+        $this->assertEquals('example.com', $uri->getAuthority());
+
+        $uri = $uri->withUserInfo('user-name');
+        $this->assertEquals('user-name@example.com', $uri->getAuthority());
+
+        $uri = $uri->withUserInfo('user-name', 'password');
+        $this->assertEquals('user-name:password@example.com', $uri->getAuthority());
+
+        $uri = $uri->withPort('8080');
+        $this->assertEquals('user-name:password@example.com:8080', $uri->getAuthority());
+
+    }
+
+    public function testPath()
+    {
+        $uri = new Uri();
+        $new = $uri->withPath('/here/his/my/path/');
+        $this->checkMutation($uri, $new);
+        $this->assertEquals('/here/his/my/path', $new->getPath());
+        $uri = $new->withPath('');
+        $this->assertEquals('', $uri->getPath());
+        $this->setExpectedException(
+            'Fsilva\\HttpMessage\\Exception\\InvalidArgumentException'
+        );
+        $uri->withPath('/here are/some errors');
+    }
+
+    public function testQuery()
+    {
+        $uri = new Uri();
+        $new = $uri->withQuery('?probably=this&is=not');
+        $this->checkMutation($uri, $new);
+        $this->assertEquals('probably=this&is=not', $new->getQuery());
+
+        $this->setExpectedException(
+            'Fsilva\\HttpMessage\\Exception\\InvalidArgumentException'
+        );
+        $uri->withQuery(new \stdClass());
+    }
+
+    public function testFragment()
+    {
+        $uri = new Uri();
+        $new = $uri->withFragment('#fragment');
+        $this->checkMutation($uri, $new);
+        $this->assertEquals('fragment', $new->getFragment());
+    }
 }
