@@ -67,7 +67,7 @@ class Uri implements UriInterface
     private $host = '';
 
     /**
-     * @var string Host port
+     * @var string|int Host port
      */
     private $port = '';
 

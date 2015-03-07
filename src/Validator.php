@@ -77,8 +77,8 @@ class Validator
     {
         $class = null;
         $isAlias = false;
-        if (isset(static::$knownValidators[$validator])) {
-            $name = static::$knownValidators[$validator];
+        if (isset(self::$knownValidators[$validator])) {
+            $name = self::$knownValidators[$validator];
             $class = __NAMESPACE__ . "\\{$name}";
             $isAlias = true;
         }
