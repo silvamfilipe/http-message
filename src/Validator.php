@@ -28,7 +28,8 @@ class Validator
      * @var array List of known validators and its alias
      */
     private static $knownValidators = [
-        'hotsname' => 'Validator\\HostName'
+        'hotsname' => 'Validator\\HostName',
+        'url' => 'Validator\\Url',
     ];
 
     /**
@@ -38,6 +39,7 @@ class Validator
      * This factory method cam be used with known validator alias. You may
      * use one of the following strings:
      *  - "hotsname" => Check if the provided value is a valid hostname;
+     *  - "url" => Check if the provided value is a valid URL;
      *
      * If a class name is given then it must exists and be an implementation
      * of Fsilva\HttpMessage\Validator\ValidatorInterface interface.

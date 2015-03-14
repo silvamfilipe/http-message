@@ -269,4 +269,16 @@ class UriTest extends TestCase
         $this->checkMutation($uri, $new);
         $this->assertEquals('fragment', $new->getFragment());
     }
+
+    public function testToStringOutput()
+    {
+        $str = "http://user:pass@example.com:8080/example/path.html?some=query#segment";
+        $uri = new Uri($str);
+        $this->assertEquals($str, (string) $uri);
+
+        $this->setExpectedException(
+            'Fsilva\\HttpMessage\\Exception\\InvalidArgumentException'
+        );
+        new Uri("Some invalid url");
+    }
 }

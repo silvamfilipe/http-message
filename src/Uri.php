@@ -59,7 +59,7 @@ class Uri implements UriInterface
     /**
      * @var string User password
      */
-    private $password;
+    private $pass;
 
     /**
      * @var string URI host name
@@ -85,6 +85,22 @@ class Uri implements UriInterface
      * @var string The fragment of the URI
      */
     private $fragment = '';
+
+    public function __construct($url = null)
+    {
+        $validUrl = Validator::isValid('url', $url);
+        if (!is_null($url) && !$validUrl) {
+            throw new InvalidArgumentException(
+                "The URL '{$url}' is not valid."
+            );
+        }
+        if (!is_null($url)) {
+            $parts = parse_url($url);
+            foreach ($parts as $property => $value) {
+                $this->$property = $value;
+            }
+        }
+    }
 
     /**
      * Retrieve the URI scheme.
@@ -143,11 +159,11 @@ class Uri implements UriInterface
     public function getUserInfo()
     {
         $format = '%s%s';
-        if (!is_null($this->password) && $this->password !== '') {
+        if (!is_null($this->pass) && $this->pass !== '') {
             $format = '%s:%s';
         }
 
-        return sprintf($format, $this->user, $this->password);
+        return sprintf($format, $this->user, $this->pass);
     }
 
     /**
@@ -288,7 +304,7 @@ class Uri implements UriInterface
     {
         $uri = clone($this);
         $uri->user = $user;
-        $uri->password = $password;
+        $uri->pass = $password;
         return $uri;
     }
 
@@ -459,6 +475,13 @@ class Uri implements UriInterface
      */
     public function __toString()
     {
-
+        $schema = $this->getScheme();
+        $str = ($schema != '') ? "{$schema}://" : $schema;
+        $str .= $this->getAuthority();
+        $str .= $this->getPath();
+        $query = $this->getQuery();
+        $str .= ($query != '') ? "?{$query}" : $query;
+        $str .= ($this->fragment != '') ? "#{$this->fragment}" : $this->fragment;
+        return $str;
     }
 }
