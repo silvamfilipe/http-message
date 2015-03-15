@@ -96,8 +96,10 @@ class Uri implements UriInterface
         }
         if (!is_null($url)) {
             $parts = parse_url($url);
-            foreach ($parts as $property => $value) {
-                $this->$property = $value;
+            if ((bool) $parts && is_array($parts)) {
+                foreach ($parts as $property => $value) {
+                    $this->$property = $value;
+                }
             }
         }
     }

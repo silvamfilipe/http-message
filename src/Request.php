@@ -54,7 +54,7 @@ class Request extends Message implements RequestInterface
     private $method;
 
     /**
-     * @var Uri Request URI
+     * @var UriInterface Request URI
      */
     private $uri;
 
@@ -81,26 +81,10 @@ class Request extends Message implements RequestInterface
      */
     public function getRequestTarget()
     {
-        $mode = 'root';
-        $hasTarget = !is_null($this->target);
-        $useUri = is_null($this->target) && $this->uri instanceof Uri;
-        $mode = $hasTarget ? 'target' : $mode;
-        $mode = $useUri ? 'uri': $mode;
-
-        switch ($mode) {
-            case 'target':
-                $target = $this->target;
-                break;
-
-            case 'uri':
-                $target = $this->getTargetFromUri();
-                break;
-
-            case 'root':
-            default:
-                $target = '/';
+        $target = $this->target;
+        if (is_null($this->target)) {
+            $target = $this->getTargetFromUri();
         }
-
         return $target;
     }
 
@@ -204,10 +188,13 @@ class Request extends Message implements RequestInterface
      */
     private function getTargetFromUri()
     {
-        $path = $this->uri->getPath();
-        $target = $path == '' ? '/' : $path;
-        $query = $this->uri->getQuery();
-        $target .= ($query != '') ? "?{$query}" : $query;
+        $target = '/';
+        if ($this->uri instanceof Uri) {
+            $path = $this->uri->getPath();
+            $target = $path == '' ? '/' : $path;
+            $query = $this->uri->getQuery();
+            $target .= ($query != '') ? "?{$query}" : $query;
+        }
         return $target;
     }
 }

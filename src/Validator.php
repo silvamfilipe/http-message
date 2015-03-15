@@ -62,7 +62,7 @@ class Validator
      */
     public static function isValid($validator, $value)
     {
-        $validator = static::getValidatorObject($validator);
+        $validator = self::getValidatorObject($validator);
         return $validator->setValue($value)->isValid();
     }
 
