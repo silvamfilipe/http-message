@@ -30,6 +30,7 @@ class Validator
     private static $knownValidators = [
         'hotsname' => 'Validator\\HostName',
         'url' => 'Validator\\Url',
+        'httpMethod' => 'Validator\\HttpRequestMethod',
     ];
 
     /**
@@ -40,6 +41,8 @@ class Validator
      * use one of the following strings:
      *  - "hotsname" => Check if the provided value is a valid hostname;
      *  - "url" => Check if the provided value is a valid URL;
+     *  - "httpMethod" => Check if the provided value is a valid HTTP
+     *    request message method;
      *
      * If a class name is given then it must exists and be an implementation
      * of Fsilva\HttpMessage\Validator\ValidatorInterface interface.
