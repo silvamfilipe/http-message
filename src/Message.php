@@ -130,10 +130,6 @@ class Message implements MessageInterface
     {
         $found = false;
 
-        if (!is_string($name)) {
-            return $found;
-        }
-
         foreach ($this->headers as $headerName => $value) {
             if (strtolower($headerName) == strtolower($name)) {
                 $found = true;
@@ -236,20 +232,16 @@ class Message implements MessageInterface
         $value = $this->checkHeaderNameAndValue($name, $value);
 
         $message = clone($this);
-        if ($message->hasHeader($name)) {
-            foreach ($message->headers as $key => $val) {
-                if (strtolower($key) == strtolower($name)) {
-                    /** @var string[] $val */
-                    foreach ($value as $newValue) {
-                        $message->headers[$key][] = $newValue;
-                    }
-                    break;
-                }
+        $names = array_keys($message->headers);
+        foreach($names as $key) {
+            if (strtolower($key) == strtolower($name)) {
+                $name = $key;
+                break;
             }
-        } else {
-            $message->headers[$name] = $value;
         }
-
+        foreach ($value as $val) {
+            $message->headers[$name][] = $val;
+        }
         return $message;
     }
 
@@ -269,16 +261,15 @@ class Message implements MessageInterface
     {
         $message = clone($this);
 
-        if ($message->hasHeader($name)) {
-            $names = array_keys($message->headers);
-            foreach ($names as $key) {
-                if (strtolower($key) == strtolower($name)) {
-                    unset($message->headers[$key]);
-                    break;
+        $names = array_keys($message->headers);
+        foreach ($names as $key) {
+            if (strtolower($key) == strtolower($name)) {
+                unset($message->headers[$key]);
+                break;
 
-                }
             }
         }
+
         return $message;
     }
 
