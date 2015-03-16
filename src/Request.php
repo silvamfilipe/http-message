@@ -9,6 +9,7 @@
 
 namespace Fsilva\HttpMessage;
 
+use Fsilva\HttpMessage\Exception\MissingHeaderException;
 use Psr\Http\Message\UriInterface;
 use Psr\Http\Message\RequestInterface;
 use Fsilva\HttpMessage\Exception\InvalidArgumentException;
@@ -62,6 +63,93 @@ class Request extends Message implements RequestInterface
      * @var string The request target
      */
     private $target;
+
+    /**
+     * Extends MessageInterface::getHeaders() to provide request-specific
+     * behavior.
+     *
+     * Retrieves all message headers.
+     *
+     * This method acts exactly like MessageInterface::getHeaders(), with one
+     * behavioral change: if the Host header has not been previously set, the
+     * method attempts to pull the host segment of the composed URI, if
+     * present.
+     *
+     * @see MessageInterface::getHeaders()
+     * @see UriInterface::getHost()
+     * @return array Returns an associative array of the message's headers. Each
+     *     key is a header name, and each value is an array of strings.
+     */
+    public function getHeaders()
+    {
+        $headers = parent::getHeaders();
+        if (!$this->hasHeader('host')) {
+            $host = $this->uri->getHost();
+            if ($host != '') {
+                $headers['host'] = [$host];
+            }
+        }
+        return $headers;
+    }
+
+    /**
+     * Extends MessageInterface::getHeader() to provide request-specific
+     * behavior.
+     *
+     * This method acts exactly like MessageInterface::getHeader(), with
+     * one behavioral change: if the Host header is requested, but has
+     * not been previously set, the method attempts to pull the host
+     * segment of the composed URI, if present.
+     *
+     * @see MessageInterface::getHeader()
+     * @see UriInterface::getHost()
+     * @param string $name Case-insensitive header field name.
+     * @return string
+     */
+    public function getHeader($name)
+    {
+        return implode(',', $this->getHeaderLines($name));
+    }
+
+    /**
+     * Extends MessageInterface::getHeaderLines() to provide request-specific
+     * behavior.
+     *
+     * Retrieves a header by the given case-insensitive name as an array of strings.
+     *
+     * This method acts exactly like MessageInterface::getHeaderLines(), with
+     * one behavioral change: if the Host header is requested, but has
+     * not been previously set, the method MUST attempt to pull the host
+     * segment of the composed URI, if present.
+     *
+     * @see MessageInterface::getHeaderLines()
+     * @see UriInterface::getHost()
+     * @param string $name Case-insensitive header field name.
+     * @return string[]
+     */
+    public function getHeaderLines($name)
+    {
+        try {
+            $header = parent::getHeaderLines($name);
+        } catch (MissingHeaderException $exp) {
+            $header = false;
+        }
+
+        if (strtolower($name) == 'host' && !$this->hasHeader($name)) {
+            $host = (!is_null($this->uri)) ? $this->uri->getHost() : '';
+            if ($host != '') {
+                $header = [$host];
+            }
+        }
+
+        if ($header === false) {
+            throw new MissingHeaderException(
+                'The header your are trying to retrieve does not exists in ' .
+                'the HTTP request message.'
+            );
+        }
+        return $header;
+    }
 
     /**
      * Retrieves the message's request target.
@@ -134,7 +222,7 @@ class Request extends Message implements RequestInterface
      * changed request method.
      *
      * @param string $method Case-insensitive method.
-     * @return self
+     * @return self|Request
      * @throws \InvalidArgumentException for invalid HTTP methods.
      */
     public function withMethod($method)
@@ -172,7 +260,7 @@ class Request extends Message implements RequestInterface
      *
      * @link http://tools.ietf.org/html/rfc3986#section-4.3
      * @param UriInterface $uri New request URI to use.
-     * @return self
+     * @return self|Request
      */
     public function withUri(UriInterface $uri)
     {

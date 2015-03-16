@@ -117,4 +117,23 @@ class RequestTest extends PHPUnit_Framework_TestCase
             $new->getRequestTarget()
         );
     }
+
+    public function testGetHeadersBehavior()
+    {
+        $request = new Request();
+        $request = $request->withUri(new Uri('http://www.example.com'));
+        $this->assertEquals('www.example.com', $request->getHeader('host'));
+        $headers = $request->getHeaders();
+        $this->assertContains('www.example.com', $headers['host']);
+
+        $request = $request->withHeader('host', 'www.example.org');
+        $this->assertEquals('www.example.org', $request->getHeader('host'));
+
+        $this->setExpectedException(
+            'Fsilva\\HttpMessage\\Exception\\MissingHeaderException'
+        );
+        $request = new Request();
+        $request->getHeader('host');
+
+    }
 }
