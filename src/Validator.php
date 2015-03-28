@@ -31,6 +31,7 @@ class Validator
         'hotsname' => 'Validator\\HostName',
         'url' => 'Validator\\Url',
         'httpMethod' => 'Validator\\HttpRequestMethod',
+        'keyValueArray' => 'Validator\\KeyValueArray',
     ];
 
     /**

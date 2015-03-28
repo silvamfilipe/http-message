@@ -1,6 +1,5 @@
 # IntelliJ - PhpStorm and PyCharm
 .idea
-*.iml
 *.ipr
 *.iws
 
@@ -33,3 +32,4 @@ composer.lock
 composer.phar
 docs
 vendor
+sandbox

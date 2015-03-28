@@ -44,13 +44,13 @@ class Message implements MessageInterface
     private $validVersions = [self::HTTP_1_1, self::HTTP_1_0, self::HTTP_2_0];
 
     /** @var string HTTP protocol version, default to 1.1 */
-    private $protocolVersion = self::HTTP_1_1;
+    protected $protocolVersion = self::HTTP_1_1;
 
     /** @var string[]|array message's headers */
-    private $headers = [];
+    protected $headers = [];
 
     /** @var StreamableInterface */
-    private $body;
+    protected $body;
 
     /**
      * Retrieves the HTTP protocol version as a string.

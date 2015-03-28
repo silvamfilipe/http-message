@@ -9,9 +9,9 @@
 
 namespace Fsilva\HttpMessage;
 
-use Fsilva\HttpMessage\Exception\MissingHeaderException;
 use Psr\Http\Message\UriInterface;
 use Psr\Http\Message\RequestInterface;
+use Fsilva\HttpMessage\Exception\MissingHeaderException;
 use Fsilva\HttpMessage\Exception\InvalidArgumentException;
 
 /**
@@ -52,17 +52,17 @@ class Request extends Message implements RequestInterface
     /**
      * @var string HTTP request method name
      */
-    private $method;
+    protected $method;
 
     /**
      * @var UriInterface Request URI
      */
-    private $uri;
+    protected $uri;
 
     /**
      * @var string The request target
      */
-    private $target;
+    protected $target;
 
     /**
      * Extends MessageInterface::getHeaders() to provide request-specific
