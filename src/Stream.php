@@ -21,7 +21,7 @@ class Stream implements StreamableInterface
 {
 
     /**
-     * @var resource Stream resource
+     * @var string|resource Stream resource
      */
     protected $resource;
 

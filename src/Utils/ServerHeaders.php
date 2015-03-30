@@ -8,6 +8,7 @@
  */
 
 namespace Fsilva\HttpMessage\Utils;
+use Fsilva\HttpMessage\ServerRequest;
 
 /**
  * This is an utility class that parses and processes all request headers
@@ -31,9 +32,9 @@ class ServerHeaders
     /**
      * Initiates server parameters from $_SERVER
      */
-    public function __construct()
+    public function __construct(ServerRequest $request)
     {
-        $this->server = $_SERVER;
+        $this->server = $request->getServerParams();
         $this->normalizeServer();
     }
 
@@ -53,9 +54,9 @@ class ServerHeaders
     /**
      * @return array
      */
-    public static function get()
+    public static function get(ServerRequest $request)
     {
-        $reader = new static();
+        $reader = new static($request);
         return $reader->getHeaders();
     }
 

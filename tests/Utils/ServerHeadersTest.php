@@ -9,6 +9,7 @@
 
 namespace Fsilva\HttpMessage\Tests\Utils;
 
+use Fsilva\HttpMessage\ServerRequest as Request;
 use Fsilva\HttpMessage\Utils\ServerHeaders;
 use PHPUnit_Framework_TestCase as TestCase;
 
@@ -37,7 +38,7 @@ class ServerHeadersTest extends TestCase
 
     public function testHeaderReader()
     {
-        $headers = ServerHeaders::get();
+        $headers = ServerHeaders::get(new Request());
         $this->assertTrue(is_array($headers));
         $this->assertEquals($this->expected, $headers);
     }
@@ -45,7 +46,7 @@ class ServerHeadersTest extends TestCase
     public function testApacheAuthorization()
     {
         $this->expected['Authorization'] = ['NTLM LAKSJDAOISUDAÇLKSJDAOISDJO'];
-        $factory = new ServerHeaders();
+        $factory = new ServerHeaders(new Request());
         $factory->setHeadersCallback(function(){
             return self::getHeadersMock();
         });
@@ -63,7 +64,7 @@ class ServerHeadersTest extends TestCase
     public function testApacheAuthorizationSmallCaps()
     {
         $this->expected['Authorization'] = ['NTLM LAKSJDAOISUDAÇLKSJDAOISDJO'];
-        $factory = new ServerHeaders();
+        $factory = new ServerHeaders(new Request());
         $factory->setHeadersCallback(function(){
             return self::getHeadersMockSmallCaps();
         });

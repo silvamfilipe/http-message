@@ -105,7 +105,7 @@ class ServerRequest extends Request implements ServerRequestInterface
         $this->cookieParams = $_COOKIE;
         $this->queryParams = $_GET;
         $this->files = $_FILES;
-        $this->headers = ServerHeaders::get();
+        $this->headers = ServerHeaders::get($this);
 
         if (isset($this->serverParams['REQUEST_METHOD'])) {
             $this->method = $this->serverParams['REQUEST_METHOD'];
