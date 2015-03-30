@@ -320,7 +320,7 @@ class Uri implements UriInterface
      *
      * @param string $host Hostname to use with the new instance.
      *
-     * @return self A new instance with the specified host.
+     * @return self|Uri A new instance with the specified host.
      * @throws \InvalidArgumentException for invalid hostnames.
      */
     public function withHost($host)

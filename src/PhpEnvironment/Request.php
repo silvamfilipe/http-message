@@ -10,6 +10,7 @@
 namespace Fsilva\HttpMessage\PhpEnvironment;
 
 use Fsilva\HttpMessage\ServerRequest;
+use Fsilva\HttpMessage\Utils\ServerRequestUri;
 use Psr\Http\Message\ServerRequestInterface;
 
 
@@ -22,74 +23,61 @@ use Psr\Http\Message\ServerRequestInterface;
  * to determine the nature of the request (isPost, isGet, isDelete, ...)
  *
  * @package Fsilva\HttpMessage\PhpEnvironment
+ *
+ * @method mixed|string getServer(string $key, mixed $default = null) Checks if
+ *   provided key exists in server params and returns it.
+ * @method mixed|string getPost(string $name, mixed $default = null) Check if a
+ *   post parameter with provided name exists and returns it.
+ * @method mixed|string getCookie(string $name, mixed $default = null) Checks
+ *   if a cookie with provided name exists and returns it.
+ * @method mixed|string getQuery(string $name, mixed $default = null) Check if
+ *   a query parameter with provided name exists and returns it.
+ * @method mixed|
  */
 class Request extends ServerRequest implements ServerRequestInterface
 {
-    /**
-     * Checks if provided key exists in server params and returns it
-     *
-     * If the provided key is not defined the default value will be
-     * returned instead
-     *
-     * @param string $key     The server param key name
-     * @param mixed  $default The value that will be returned if the key is not
-     *                        set in server params. Defaults to NULL.
-     *
-     * @return mixed The server value or the provided default value
-     */
-    public function getServer($key, $default = null)
-    {
-        $value = $default;
-        $server = $this->getServerParams();
-        if (isset($server[$key])) {
-            $value = $server[$key];
-        }
-        return $value;
-    }
 
     /**
-     * Checks if a cookie with provided name exists and returns it
-     *
-     * if there is no cookie with the provided name the default value will
-     * be returned instead
-     *
-     * @param string $name    The cookie name to retrieve
-     * @param mixed  $default The value that will be returned if the cookie
-     *                        does not exists. Defaults to NULL.
-     *
-     * @return mixed The cookie value or the provided default value
+     * @var string The request base path
      */
-    public function getCookie($name, $default = null)
-    {
-        $value = $default;
-        $cookies = $this->getCookieParams();
-        if (isset($cookies[$name])) {
-            $value = $cookies[$name];
-        }
-        return $value;
-    }
+    private $basePath;
 
     /**
-     * Check if a query parameter with provided name exists and returns it
-     *
-     * If there is no query parameter with provided name the default value
-     * will be returned
-     *
-     * @param string $name    The query parameter name to retrieve
-     * @param null   $default The value that will be returned if the query
-     *                        parameter with provided name does not exists.
-     *                        Defaults to Null
-     *
-     * @return mixed The query parameter or the provided default value
+     * @var array The callbacks used to retrieve request values
      */
-    public function getQuery($name, $default = null)
+    private $callbacks = [
+        'getServer' => 'getServerParams',
+        'getQuery' => 'getQueryParams',
+        'getPost' => 'getParsedBody',
+        'getCookie' => 'getCookieParams',
+    ];
+
+    /**
+     * Check if the calling method is one of the callbacks and call the common
+     * method for request parameters retrieval.
+     *
+     * @see getValue()
+     *
+     * @param string $name      Method name
+     * @param array  $arguments Arguments passed along with method call
+     *
+     * @return mixed
+     *
+     * @throws \BadMethodCallException If the method is not defined
+     */
+    public function __call($name, $arguments)
     {
-        $value = $default;
-        $params = $this->getQueryParams();
-        if (isset($params[$name])) {
-            $value = $params[$name];
+        if (isset($this->callbacks[$name])) {
+            $method = $this->callbacks[$name];
+            $values = $this->$method();
+            array_unshift($arguments, $values);
+            return call_user_func_array([$this, 'getValue'], $arguments);
         }
-        return $value;
+
+        $class = __CLASS__;
+        throw new \BadMethodCallException(
+            "{$name} method is not defined in {$class}"
+        );
     }
 
     /**
@@ -115,25 +103,38 @@ class Request extends ServerRequest implements ServerRequestInterface
         return $value;
     }
 
+
     /**
-     * Check if a post parameter with provided name exists and returns it
+     * Returns the request URI base path
      *
-     * If there is no post parameter with provided name the default value
-     * will be returned
-     *
-     * @param string $name    The post parameter name to retrieve
-     * @param null   $default The value that will be returned if the post
-     *                        parameter with provided name does not exists.
-     *                        Defaults to Null
-     *
-     * @return mixed The post parameter or the provided default value
+     * @return mixed|string
      */
-    public function getPost($name, $default = null)
+    public function getBasePath()
+    {
+        if (is_null($this->basePath)) {
+            $factory = ServerRequestUri::parse($this);
+            $this->basePath = $factory->getBasePath();
+        }
+        return $this->basePath;
+    }
+
+    /**
+     * General propose method that searches the provided array of values to
+     * find the given name returning its value of the default value if not
+     * found.
+     *
+     * @param array  $values  The array to search
+     * @param string $name    The key name to find out
+     * @param mixed  $default The default value it key does not exists
+     *
+     * @return mixed The value for the given key name or the default value it
+     *  the key does not exists
+     */
+    protected function getValue($values, $name, $default = null)
     {
         $value = $default;
-        $post = $this->getParsedBody();
-        if (isset($post[$name])) {
-            $value = $post[$name];
+        if (isset($values[$name])) {
+            $value = $values[$name];
         }
         return $value;
     }

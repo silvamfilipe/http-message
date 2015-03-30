@@ -234,6 +234,21 @@ class ServerRequestTest extends TestCase
         $_SERVER = $srv;
     }
 
+    public function testAttributes()
+    {
+        $request = new Request();
+        $this->assertEquals([], $request->getAttributes());
+        $new = $request->withAttribute('foo', 'bar');
+        $this->checkImmutability($request, $new);
+        $this->assertEquals('bar', $new->getAttribute('foo'));
+        $this->assertFalse($request->getAttribute('foo', false));
+        $other = $new->withoutAttribute('foo');
+        $type = "Fsilva\\HttpMessage\\ServerRequest";
+        $this->assertInstanceOf($type, $other);
+        $this->assertTrue($other->getAttribute('foo', true));
+        $this->assertEquals([], $other->getAttributes());
+    }
+
     protected function checkImmutability($request, $new)
     {
         $type = "Fsilva\\HttpMessage\\ServerRequest";

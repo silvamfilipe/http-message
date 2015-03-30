@@ -78,6 +78,32 @@ class RequestTest extends TestCase
         $this->assertEquals($data['field2'], $request->getFiles('field2'));
     }
 
+    public function testCallToUndefinedMethod()
+    {
+        $request = new Request();
+        $this->setExpectedException('\BadMethodCallException');
+        $request->foo();
+    }
+
+    public function testGetBasePath()
+    {
+        $srv = $_SERVER;
+        $_SERVER['SERVER_NAME'] = 'localhost';
+        $_SERVER['SERVER_PORT'] = 80;
+        $_SERVER['REQUEST_SCHEME'] = 'http';
+        $_SERVER['QUERY_STRING'] = 'url=users/read/2&extension=&page=3';
+        $_SERVER['REQUEST_URI'] = '/projects/Experimental/HttpMessages/sandbox/users/read/2?page=3';
+        $_SERVER['SCRIPT_NAME'] = '/projects/Experimental/HttpMessages/sandbox/index.php';
+        $_SERVER['SCRIPT_FILENAME'] = '/var/www/html/projects/Experimental/HttpMessages/sandbox/index.php';
+        $_SERVER['PHP_SELF'] = '/projects/Experimental/HttpMessages/sandbox/index.php';
+
+        $request = new Request();
+        $basePath = '/projects/Experimental/HttpMessages/sandbox';
+        $this->assertEquals($basePath, $request->getBasePath());
+
+        $_SERVER = $srv;
+    }
+
     /**
      * @return array 2 examples of $_FILES superglobal
      */

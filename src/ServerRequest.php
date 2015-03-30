@@ -11,6 +11,7 @@ namespace Fsilva\HttpMessage;
 
 use Fsilva\HttpMessage\Utils\ServerHeaders;
 use Fsilva\HttpMessage\Parser\ParserFactory;
+use Fsilva\HttpMessage\Utils\ServerRequestUri;
 use Psr\Http\Message\ServerRequestInterface;
 use Fsilva\HttpMessage\Parser\ParserInterface;
 use Fsilva\HttpMessage\Exception\InvalidArgumentException;
@@ -86,6 +87,11 @@ class ServerRequest extends Request implements ServerRequestInterface
     private $parsedData;
 
     /**
+     * @var array attributes derived from the request
+     */
+    private $attributes = [];
+
+    /**
      * @var ParserInterface The content parser for body parsing
      */
     private $contentParser;
@@ -114,6 +120,9 @@ class ServerRequest extends Request implements ServerRequestInterface
         $this->parsedData =$this->getContentParser()
             ->setContent($this->body)
             ->parse();
+        $uriParser = ServerRequestUri::parse($this);
+        $this->uri = $uriParser->getUri();
+        $this->target = $uriParser->getRequestUri();
     }
 
     /**
@@ -273,11 +282,7 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function getParsedBody()
     {
-        $value = $this->parsedData;
-        if (is_string($value) && $value == '') {
-            $value = null;
-        }
-        return $value;
+        return $this->parsedData;
     }
 
     /**
@@ -333,7 +338,7 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function getAttributes()
     {
-        // TODO: Implement getAttributes() method.
+        return $this->attributes;
     }
 
     /**
@@ -355,7 +360,11 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function getAttribute($name, $default = null)
     {
-        // TODO: Implement getAttribute() method.
+        $value = $default;
+        if (isset($this->attributes[$name])) {
+            $value = $this->attributes[$name];
+        }
+        return $value;
     }
 
     /**
@@ -364,8 +373,8 @@ class ServerRequest extends Request implements ServerRequestInterface
      * This method allows setting a single derived request attribute as
      * described in getAttributes().
      *
-     * This method MUST be implemented in such a way as to retain the
-     * immutability of the message, and MUST return a new instance that has the
+     * This method is implemented in such a way as to retain the immutability
+     * of the message, and will return a new instance that has the
      * updated attribute.
      *
      * @see getAttributes()
@@ -377,7 +386,9 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function withAttribute($name, $value)
     {
-        // TODO: Implement withAttribute() method.
+        $request = clone $this;
+        $request->attributes[$name] = $value;
+        return $request;
     }
 
     /**
@@ -387,8 +398,8 @@ class ServerRequest extends Request implements ServerRequestInterface
      * This method allows removing a single derived request attribute as
      * described in getAttributes().
      *
-     * This method MUST be implemented in such a way as to retain the
-     * immutability of the message, and MUST return a new instance that removes
+     * This method is implemented in such a way as to retain the immutability
+     * of the message, and will return a new instance that removes
      * the attribute.
      *
      * @see getAttributes()
@@ -399,6 +410,10 @@ class ServerRequest extends Request implements ServerRequestInterface
      */
     public function withoutAttribute($name)
     {
-        // TODO: Implement withoutAttribute() method.
+        $request = clone $this;
+        if (isset($request->attributes[$name])) {
+            unset($request->attributes[$name]);
+        }
+        return $request;
     }
 }
