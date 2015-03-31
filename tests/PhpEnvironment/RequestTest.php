@@ -45,10 +45,13 @@ class RequestTest extends TestCase
 
     public function testQueryParamRetrieve()
     {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
         $_GET['__test__'] = 'This is a test';
         $request = new Request();
         $this->assertEquals('This is a test', $request->getQuery('__test__'));
         $this->assertTrue($request->getQuery('unknown', true));
+        $this->assertTrue($request->isGet());
+        $this->assertEquals($_GET, $request->getQuery());
     }
 
     public function testPostParamRetrieve()
@@ -64,6 +67,8 @@ class RequestTest extends TestCase
         $request = new Request();
         $this->assertEquals('This is a test', $request->getPost('__test__'));
         $this->assertTrue($request->getPost('unknown', true));
+        $this->assertTrue($request->isPost());
+        $this->assertEquals($_POST, $request->getPost());
 
         $_POST = $post;
         $_SERVER = $srv;

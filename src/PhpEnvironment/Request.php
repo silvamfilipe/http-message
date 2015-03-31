@@ -24,15 +24,25 @@ use Psr\Http\Message\ServerRequestInterface;
  *
  * @package Fsilva\HttpMessage\PhpEnvironment
  *
- * @method mixed|string getServer(string $key, mixed $default = null) Checks if
- *   provided key exists in server params and returns it.
- * @method mixed|string getPost(string $name, mixed $default = null) Check if a
- *   post parameter with provided name exists and returns it.
- * @method mixed|string getCookie(string $name, mixed $default = null) Checks
- *   if a cookie with provided name exists and returns it.
- * @method mixed|string getQuery(string $name, mixed $default = null) Check if
- *   a query parameter with provided name exists and returns it.
- * @method mixed|
+ * @method mixed|string getServer(string $key=null, mixed $default=null)
+ *   Checks if provided key exists in server params and returns it.
+ * @method mixed|string getPost(string $name=null, mixed $default=null)
+ *   Check if a post parameter with provided name exists and returns it.
+ * @method mixed|string getCookie(string $name=null, mixed $default=null)
+ *   Checks if a cookie with provided name exists and returns it.
+ * @method mixed|string getQuery(string $name=null, mixed $default=null)
+ * Check if a query parameter with provided name exists and returns it.
+ *
+ * @method bool isPost() Is this a POST method request?
+ * @method bool isGet() Is this a GET request?
+ * @method bool isPut() Is this a PUT request?
+ * @method bool isDelete() Is this a DELETE request?
+ * @method bool isHead() Is this a HEAD request?
+ * @method bool isOptions() Is this a OPTIONS request?
+ * @method bool isTrace() Is this a TRACE request?
+ * @method bool isConnect() Is this a CONNECT request?
+ * @method bool isPatch() Is this a PATCH request?
+ * @method bool isPropFind() Is this a PROPFIND request?
  */
 class Request extends ServerRequest implements ServerRequestInterface
 {
@@ -47,9 +57,25 @@ class Request extends ServerRequest implements ServerRequestInterface
      */
     private $callbacks = [
         'getServer' => 'getServerParams',
-        'getQuery' => 'getQueryParams',
-        'getPost' => 'getParsedBody',
+        'getQuery'  => 'getQueryParams',
+        'getPost'   => 'getParsedBody',
         'getCookie' => 'getCookieParams',
+    ];
+
+    /**
+     * @var array The method checking definition for isXXX magic methods
+     */
+    private $methodCheckers = [
+        'isPost'    => self::METHOD_POST,
+        'isGet'     => self::METHOD_GET,
+        'isPut'     => self::METHOD_PUT,
+        'isDelete'  => self::METHOD_DELETE,
+        'isHead'    => self::METHOD_HEAD,
+        'isOptions' => self::METHOD_OPTIONS,
+        'isTrace'   => self::METHOD_TRACE,
+        'isConnect' => self::METHOD_CONNECT,
+        'isPatch'   => self::METHOD_PATCH,
+        'isPropFind'=> self::METHOD_PROPFIND
     ];
 
     /**
@@ -74,6 +100,10 @@ class Request extends ServerRequest implements ServerRequestInterface
             return call_user_func_array([$this, 'getValue'], $arguments);
         }
 
+        if (isset($this->methodCheckers[$name])) {
+            return $this->isMethod($this->methodCheckers[$name]);
+        }
+
         $class = __CLASS__;
         throw new \BadMethodCallException(
             "{$name} method is not defined in {$class}"
@@ -93,11 +123,13 @@ class Request extends ServerRequest implements ServerRequestInterface
      *
      * @return array
      */
-    public function getFiles($name, $default = [])
+    public function getFiles($name = null, $default = [])
     {
-        $value = $default;
         $files = $this->getFileParams();
-        if (isset($files[$name])) {
+        $value = is_null($name)
+            ? $files
+            : $default;
+        if (!is_null($name) && isset($files[$name])) {
             $value = $files[$name];
         }
         return $value;
@@ -119,6 +151,49 @@ class Request extends ServerRequest implements ServerRequestInterface
     }
 
     /**
+     * Is the request a Javascript XMLHttpRequest?
+     *
+     * Should work with jQuery, Prototype/Script.aculo.us, possibly others.
+     *
+     * @return bool
+     */
+    public function isXmlHttpRequest()
+    {
+        $name = 'X-Requested-With';
+        $header = $this->hasHeader($name);
+        return false !== $header &&
+            $this->getHeader($name) == 'XMLHttpRequest';
+    }
+    /**
+     * Is this a Flash request?
+     *
+     * @return bool
+     */
+    public function isFlashRequest()
+    {
+        $name = 'User-Agent';
+        $header = $this->hasHeader($name);
+        return false !== $header &&
+            stristr($this->getHeader($name), ' flash');
+    }
+
+    /**
+     * Check if current request is form a given method name
+     *
+     * This is used with __call() to handle the magic methods
+     * isPost, isGet, etc.
+     *
+     * @see __call()
+     *
+     * @param $method
+     * @return bool
+     */
+    private function isMethod($method)
+    {
+        return (bool) $this->getMethod() == $method;
+    }
+
+    /**
      * General propose method that searches the provided array of values to
      * find the given name returning its value of the default value if not
      * found.
@@ -130,10 +205,10 @@ class Request extends ServerRequest implements ServerRequestInterface
      * @return mixed The value for the given key name or the default value it
      *  the key does not exists
      */
-    protected function getValue($values, $name, $default = null)
+    private function getValue($values, $name = null, $default = null)
     {
-        $value = $default;
-        if (isset($values[$name])) {
+        $value = is_null($name) ? $values : $default;
+        if (!is_null($name) && isset($values[$name])) {
             $value = $values[$name];
         }
         return $value;
