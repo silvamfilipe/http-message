@@ -109,6 +109,25 @@ class RequestTest extends TestCase
         $_SERVER = $srv;
     }
 
+    public function testAjaxAndFlash()
+    {
+        $srv = $_SERVER;
+        $post = $_POST;
+
+        $_SERVER['HTTP_HOST'] = 'www.example.com';
+        $_SERVER['HTTP_User_Agent'] = 'some flash agent';
+        $_SERVER['HTTP_X_Requested_With'] = 'XMLHttpRequest';
+        $_SERVER['CONTENT_TYPE'] = 'application/x-www-form-urlencoded';
+        $_SERVER['REQUEST_METHOD'] = 'POST';
+
+        $request = new Request();
+        $this->assertTrue($request->isXmlHttpRequest());
+        $this->assertTrue($request->isFlashRequest());
+
+        $_POST = $post;
+        $_SERVER = $srv;
+    }
+
     /**
      * @return array 2 examples of $_FILES superglobal
      */
