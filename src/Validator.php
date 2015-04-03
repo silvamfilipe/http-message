@@ -32,6 +32,7 @@ class Validator
         'url' => 'Validator\\Url',
         'httpMethod' => 'Validator\\HttpRequestMethod',
         'keyValueArray' => 'Validator\\KeyValueArray',
+        'headerValue' => 'Validator\\HeaderValue',
     ];
 
     /**

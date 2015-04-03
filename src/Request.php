@@ -134,14 +134,7 @@ class Request extends Message implements RequestInterface
         try {
             $header = parent::getHeaderLines($name);
         } catch (MissingHeaderException $exp) {
-            $header = false;
-        }
-
-        if (strtolower($name) == 'host' && !$this->hasHeader($name)) {
-            $host = (!is_null($this->uri)) ? $this->uri->getHost() : '';
-            if ($host != '') {
-                $header = [$host];
-            }
+            $header = $this->pullHostFromUri($name);
         }
 
         if ($header === false) {
@@ -286,5 +279,24 @@ class Request extends Message implements RequestInterface
             $target .= ($query != '') ? "?{$query}" : $query;
         }
         return $target;
+    }
+
+    /**
+     * Attempt to pull the host from URI if header name is 'host'
+     *
+     * @param string $name Header name
+     *
+     * @return array|bool
+     */
+    private function pullHostFromUri($name)
+    {
+        $header = false;
+        if (strtolower($name) == 'host') {
+            $host = (!is_null($this->uri)) ? $this->uri->getHost() : '';
+            if ($host != '') {
+                $header = [$host];
+            }
+        }
+        return $header;
     }
 }

@@ -348,9 +348,7 @@ class Message implements MessageInterface
             );
         }
 
-        $allStrings = true;
-
-        if (!is_string($value) && !is_array($value)) {
+        if (!Validator::isValid('headerValue', $value)) {
             throw new InvalidArgumentException(
                 "The header value for {$name} can only be a string or " .
                 "array of strings."
@@ -358,18 +356,6 @@ class Message implements MessageInterface
         }
 
         $value = is_string($value) ? [$value] : $value;
-
-        array_walk($value, function($element) use (&$allStrings) {
-            if (!is_string($element)) {
-                $allStrings = false;
-            }
-        });
-
-        if (!$allStrings) {
-            throw new InvalidArgumentException(
-                "The header value for {$name} is not an array of strings."
-            );
-        }
 
         return $value;
     }
