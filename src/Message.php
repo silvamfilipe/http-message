@@ -338,7 +338,7 @@ class Message implements MessageInterface
      * @param mixed $name
      * @param mixed $value
      *
-     * @return string[]
+     * @return string[]|array
      */
     private function checkHeaderNameAndValue($name, $value)
     {

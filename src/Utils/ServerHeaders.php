@@ -71,10 +71,6 @@ class ServerHeaders
     {
         $headers = array();
         foreach ($this->server as $key => $value) {
-            if (strpos($key, 'HTTP_COOKIE') === 0) {
-                // Cookies are handled using the $_COOKIE super global
-                continue;
-            }
             if ($value && strpos($key, 'HTTP_') === 0) {
                 $name = strtr(substr($key, 5), '_', ' ');
                 $name = strtr(ucwords(strtolower($name)), ' ', '-');
@@ -89,7 +85,7 @@ class ServerHeaders
                 continue;
             }
         }
-        return $headers;
+        return $this->clean($headers);
     }
 
     /**
@@ -128,5 +124,20 @@ class ServerHeaders
             },
             $data
         );
+    }
+
+    /**
+     * Clean cookie header
+     *
+     * @param array $headers
+     *
+     * @return array
+     */
+    private function clean(array $headers)
+    {
+        if (isset($headers['Cookie'])) {
+            unset($headers['Cookie']);
+        }
+        return $headers;
     }
 }
