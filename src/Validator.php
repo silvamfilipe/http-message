@@ -33,6 +33,7 @@ class Validator
         'httpMethod' => 'Validator\\HttpRequestMethod',
         'keyValueArray' => 'Validator\\KeyValueArray',
         'headerValue' => 'Validator\\HeaderValue',
+        'statusCode' => 'Validator\\StatusCode',
     ];
 
     /**
