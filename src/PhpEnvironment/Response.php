@@ -65,6 +65,7 @@ class Response extends PsrResponse implements ResponseInterface
                 header(sprintf('%s: %s', $name, $value), false);
             }
         }
+        $this->headersSent = true;
 
         return $this;
     }
@@ -88,7 +89,7 @@ class Response extends PsrResponse implements ResponseInterface
      *
      * @return Response
      */
-    public function sent()
+    public function send()
     {
         $this->sendHeaders()
             ->sendContent();
