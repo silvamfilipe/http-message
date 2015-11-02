@@ -10,7 +10,7 @@
 namespace Fsilva\HttpMessage;
 
 use Psr\Http\Message\MessageInterface;
-use Psr\Http\Message\StreamableInterface;
+use Psr\Http\Message\StreamInterface;
 use Fsilva\HttpMessage\Exception\MissingHeaderException;
 use Fsilva\HttpMessage\Exception\InvalidVersionException;
 use Fsilva\HttpMessage\Exception\InvalidArgumentException;
@@ -44,13 +44,13 @@ class Message implements MessageInterface
     private $validVersions = [self::HTTP_1_1, self::HTTP_1_0, self::HTTP_2_0];
 
     /** @var string HTTP protocol version, default to 1.1 */
-    private $protocolVersion = self::HTTP_1_1;
+    protected $protocolVersion = self::HTTP_1_1;
 
     /** @var string[]|array message's headers */
-    private $headers = [];
+    protected $headers = [];
 
-    /** @var StreamableInterface */
-    private $body;
+    /** @var StreamInterface */
+    protected $body;
 
     /**
      * Retrieves the HTTP protocol version as a string.
@@ -129,10 +129,6 @@ class Message implements MessageInterface
     public function hasHeader($name)
     {
         $found = false;
-
-        if (!is_string($name)) {
-            return $found;
-        }
 
         foreach ($this->headers as $headerName => $value) {
             if (strtolower($headerName) == strtolower($name)) {
@@ -236,20 +232,16 @@ class Message implements MessageInterface
         $value = $this->checkHeaderNameAndValue($name, $value);
 
         $message = clone($this);
-        if ($message->hasHeader($name)) {
-            foreach ($message->headers as $key => $val) {
-                if (strtolower($key) == strtolower($name)) {
-                    /** @var string[] $val */
-                    foreach ($value as $newValue) {
-                        $message->headers[$key][] = $newValue;
-                    }
-                    break;
-                }
+        $names = array_keys($message->headers);
+        foreach($names as $key) {
+            if (strtolower($key) == strtolower($name)) {
+                $name = $key;
+                break;
             }
-        } else {
-            $message->headers[$name] = $value;
         }
-
+        foreach ($value as $val) {
+            $message->headers[$name][] = $val;
+        }
         return $message;
     }
 
@@ -269,23 +261,22 @@ class Message implements MessageInterface
     {
         $message = clone($this);
 
-        if ($message->hasHeader($name)) {
-            $names = array_keys($message->headers);
-            foreach ($names as $key) {
-                if (strtolower($key) == strtolower($name)) {
-                    unset($message->headers[$key]);
-                    break;
+        $names = array_keys($message->headers);
+        foreach ($names as $key) {
+            if (strtolower($key) == strtolower($name)) {
+                unset($message->headers[$key]);
+                break;
 
-                }
             }
         }
+
         return $message;
     }
 
     /**
      * Gets the body of the message.
      *
-     * @return StreamableInterface Returns the body as a stream.
+     * @return StreamInterface Returns the body as a stream.
      */
     public function getBody()
     {
@@ -301,11 +292,11 @@ class Message implements MessageInterface
      * immutability of the message, and MUST return a new instance that has the
      * new body stream.
      *
-     * @param StreamableInterface $body Body.
+     * @param StreamInterface $body Body.
      * @return self
      * @throws \InvalidArgumentException When the body is not valid.
      */
-    public function withBody(StreamableInterface $body)
+    public function withBody(StreamInterface $body)
     {
         $message = clone($this);
         $message->body = $body;
@@ -347,7 +338,7 @@ class Message implements MessageInterface
      * @param mixed $name
      * @param mixed $value
      *
-     * @return string[]
+     * @return string[]|array
      */
     private function checkHeaderNameAndValue($name, $value)
     {
@@ -357,9 +348,7 @@ class Message implements MessageInterface
             );
         }
 
-        $allStrings = true;
-
-        if (!is_string($value) && !is_array($value)) {
+        if (!Validator::isValid('headerValue', $value)) {
             throw new InvalidArgumentException(
                 "The header value for {$name} can only be a string or " .
                 "array of strings."
@@ -368,18 +357,30 @@ class Message implements MessageInterface
 
         $value = is_string($value) ? [$value] : $value;
 
-        array_walk($value, function($element) use (&$allStrings) {
-            if (!is_string($element)) {
-                $allStrings = false;
-            }
-        });
-
-        if (!$allStrings) {
-            throw new InvalidArgumentException(
-                "The header value for {$name} is not an array of strings."
-            );
-        }
-
         return $value;
+    }
+
+    /**
+     * Retrieves a comma-separated string of the values for a single header.
+     *
+     * This method returns all of the header values of the given
+     * case-insensitive header name as a string concatenated together using
+     * a comma.
+     *
+     * NOTE: Not all header values may be appropriately represented using
+     * comma concatenation. For such headers, use getHeader() instead
+     * and supply your own delimiter when concatenating.
+     *
+     * If the header does not appear in the message, this method MUST return
+     * an empty string.
+     *
+     * @param string $name Case-insensitive header field name.
+     * @return string A string of values as provided for the given header
+     *    concatenated together using a comma. If the header does not appear in
+     *    the message, this method MUST return an empty string.
+     */
+    public function getHeaderLine($name)
+    {
+        // TODO: Implement getHeaderLine() method.
     }
 }

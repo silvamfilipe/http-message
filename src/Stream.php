@@ -1,53 +1,65 @@
 <?php
 
 /**
- * This file is part of fsilva/http-message package
+ * This file is part of HttpMessage package
  *
  * For the full copyright and license information, please view the LICENSE
  * file that was distributed with this source code.
  */
 
-namespace Fsilva\HttpMessage\Stream;
+namespace Fsilva\HttpMessage;
 
+use Fsilva\HttpMessage\Exception\InvalidArgumentException;
 use Psr\Http\Message\StreamInterface;
 
 /**
- * Provides a buffer stream that can be written to to fill a buffer, and read
- * from to remove bytes from the buffer.
+ * Implementation of PSR HTTP Streams
  *
- * This stream returns a "hwm" metadata value that tells upstream consumers
- * what the configured high water mark of the stream is, or the maximum
- * preferred size of the buffer.
- *
- * @package Fsilva\HttpMessage\Stream
+ * @package Fsilva\HttpMessage
  */
-class Buffer implements StreamInterface
+class Stream implements StreamInterface
 {
 
-    /** @var int High water mark, defaults to 16384 */
-    private $hwm;
-
-    /** @var string Buffer */
-    private $buffer = '';
+    /**
+     * @var string|resource Stream resource
+     */
+    protected $resource;
 
     /**
-     * Creates a new instance of a buffer stream
-     *
-     * @param int $hwm High water mark, representing the preferred maximum
-     *     buffer size. If the size of the buffer exceeds the high water mark,
-     *     then calls to write will continue to succeed but will return false
-     *     to inform writers to slow down until the buffer has been drained by
-     *     reading from it.
+     * @var array Stream metadata
      */
-    public function __construct($hwm = 16384)
+    private $metadata;
+
+    /**
+     * Creates a streamable instance for given stream
+     *
+     * @param string|resource $stream
+     * @param string          $mode   Mode with which to open stream
+     *
+     * @throws InvalidArgumentException If the stream parameter given is not
+     *                                  a string or a resource.
+     */
+    public function __construct($stream, $mode = 'r')
     {
-        $this->hwm = $hwm;
+        $notValid = !is_string($stream) && !is_resource($stream);
+        if ($notValid) {
+            throw new InvalidArgumentException(
+                'Invalid stream provided; must be a string stream ' .
+                'identifier or resource'
+            );
+        }
+
+        $this->resource = $stream;
+
+        if (is_string($stream)) {
+            $this->resource = fopen($stream, $mode);
+        }
     }
 
     /**
      * Reads all data from the stream into a string, from the beginning to end.
      *
-     * This method MUST attempt to seek to the beginning of the stream before
+     * This method attempts to seek to the beginning of the stream before
      * reading data and read the stream until the end is reached.
      *
      * Warning: This could attempt to load a large amount of data into memory.
@@ -56,7 +68,7 @@ class Buffer implements StreamInterface
      */
     public function __toString()
     {
-        return $this->buffer;
+        return $this->getContents();
     }
 
     /**
@@ -66,7 +78,10 @@ class Buffer implements StreamInterface
      */
     public function close()
     {
-        $this->buffer = '';
+        if ($this->resource) {
+            $resource = $this->detach();
+            fclose($resource);
+        }
     }
 
     /**
@@ -78,7 +93,9 @@ class Buffer implements StreamInterface
      */
     public function detach()
     {
-        $this->close();
+        $resource = $this->resource;
+        $this->resource = null;
+        return $resource;
     }
 
     /**
@@ -88,7 +105,7 @@ class Buffer implements StreamInterface
      */
     public function getSize()
     {
-        return strlen($this->buffer);
+        return null;
     }
 
     /**
@@ -98,7 +115,11 @@ class Buffer implements StreamInterface
      */
     public function tell()
     {
-        return false;
+        $position = false;
+        if ($this->resource) {
+            $position = ftell($this->resource);
+        }
+        return $position;
     }
 
     /**
@@ -108,7 +129,11 @@ class Buffer implements StreamInterface
      */
     public function eof()
     {
-        return strlen($this->buffer) === 0;
+        $eof = true;
+        if ($this->resource) {
+            $eof = feof($this->resource);
+        }
+        return $eof;
     }
 
     /**
@@ -118,7 +143,11 @@ class Buffer implements StreamInterface
      */
     public function isSeekable()
     {
-        return false;
+        $seekable = false;
+        if ($this->resource) {
+            $seekable = $this->getMetadata('seekable');
+        }
+        return $seekable;
     }
 
     /**
@@ -128,16 +157,21 @@ class Buffer implements StreamInterface
      *
      * @param int $offset Stream offset
      * @param int $whence Specifies how the cursor position will be calculated
-     *     based on the seek offset. Valid values are identical to the built-in
-     *     PHP $whence values for `fseek()`.  SEEK_SET: Set position equal to
-     *     offset bytes SEEK_CUR: Set position to current location plus offset
-     *     SEEK_END: Set position to end-of-stream plus offset.
+     *                    based on the seek offset. Valid values are identical to the built-in
+     *                    PHP $whence values for `fseek()`.  SEEK_SET: Set position equal to
+     *                    offset bytes SEEK_CUR: Set position to current location plus offset
+     *                    SEEK_END: Set position to end-of-stream plus offset.
      *
      * @return bool Returns TRUE on success or FALSE on failure.
      */
     public function seek($offset, $whence = SEEK_SET)
     {
-        return false;
+        $result = false;
+        if ($this->resource && $this->isSeekable()) {
+            $result = fseek($this->resource, $offset, $whence);
+            $result = (0 === $result);
+        }
+        return $result;
     }
 
     /**
@@ -163,7 +197,13 @@ class Buffer implements StreamInterface
      */
     public function isWritable()
     {
-        return true;
+        $readable = false;
+        if ($this->resource) {
+            $mode = $this->getMetadata('mode');
+            $regExp = '/(r\+|a|w|x|c)/i';
+            $readable = (bool) preg_match($regExp, $mode);
+        }
+        return $readable;
     }
 
     /**
@@ -176,11 +216,11 @@ class Buffer implements StreamInterface
      */
     public function write($string)
     {
-        $this->buffer .= $string;
-        if (strlen($this->buffer) >= $this->hwm) {
-            return false;
+        $bitesWritten = false;
+        if ($this->resource && $this->isWritable()) {
+            $bitesWritten = fwrite($this->resource, $string);
         }
-        return strlen($string);
+        return $bitesWritten;
     }
 
     /**
@@ -190,32 +230,36 @@ class Buffer implements StreamInterface
      */
     public function isReadable()
     {
-        return true;
+        $readable = false;
+        if ($this->resource) {
+            $mode = $this->getMetadata('mode');
+            $regExp = '/(r\+|r|w\+|a\+|x\+|c\+)/i';
+            $readable = (bool) preg_match($regExp, $mode);
+        }
+        return $readable;
     }
 
     /**
      * Read data from the stream.
      *
      * @param int $length Read up to $length bytes from the object and return
-     *     them. Fewer than $length bytes may be returned if underlying stream
-     *     call returns fewer bytes.
+     *                    them. Fewer than $length bytes may be returned if underlying stream
+     *                    call returns fewer bytes.
      *
      * @return string|false Returns the data read from the stream, false if
      *     unable to read or if an error occurs.
      */
     public function read($length)
     {
-        $currentLength = strlen($this->buffer);
-        if ($length >= $currentLength) {
-            // No need to slice the buffer because we don't have enough data.
-            $result = $this->buffer;
-            $this->buffer = '';
-        } else {
-            // Slice up the result to provide a subset of the buffer.
-            $result = substr($this->buffer, 0, $length);
-            $this->buffer = substr($this->buffer, $length);
+        if (!$this->resource || !$this->isReadable()) {
+            return false;
         }
-        return $result;
+
+        $contents = '';
+        if (!$this->eof()) {
+            $contents = fread($this->resource, $length);
+        }
+        return $contents;
     }
 
     /**
@@ -225,9 +269,11 @@ class Buffer implements StreamInterface
      */
     public function getContents()
     {
-        $buffer = $this->buffer;
-        $this->buffer = '';
-        return $buffer;
+        $string = '';
+        if ($this->isReadable()) {
+            $string = stream_get_contents($this->resource, -1, 0);
+        }
+        return (string) $string;
     }
 
     /**
@@ -246,9 +292,16 @@ class Buffer implements StreamInterface
      */
     public function getMetadata($key = null)
     {
-        if ($key == 'hwm') {
-            return $this->hwm;
+        if (is_null($this->metadata)) {
+            $this->metadata = stream_get_meta_data($this->resource);
         }
-        return $key ? null : [];
+        $return = null;
+        if (is_null($key)) {
+            $return = $this->metadata;
+        }
+        if (array_key_exists($key, $this->metadata)) {
+            $return = $this->metadata[$key];
+        }
+        return $return;
     }
 }

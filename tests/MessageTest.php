@@ -271,7 +271,7 @@ class MessageTest extends \PHPUnit_Framework_TestCase
         $newMessage = $message->withBody(new Buffer());
         $this->assertNotSame($message, $newMessage);
         $this->assertInstanceOf('Fsilva\\HttpMessage\\Message', $newMessage);
-        $this->assertInstanceOf('Psr\\Http\\Message\\StreamableInterface', $newMessage->getBody());
+        $this->assertInstanceOf('Psr\\Http\\Message\\StreamInterface', $newMessage->getBody());
         $this->assertNull($message->getBody());
     }
 
