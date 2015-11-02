@@ -48,7 +48,7 @@ class StreamTest extends TestCase
     public function testCreateStream($stream, $mode = 'r')
     {
         $streamable = new Stream($stream, $mode);
-        $this->assertInstanceOf("Psr\\Http\\Message\\StreamableInterface", $streamable);
+        $this->assertInstanceOf("Psr\\Http\\Message\\StreamInterface", $streamable);
     }
 
     /**

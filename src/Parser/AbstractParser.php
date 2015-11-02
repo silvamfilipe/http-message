@@ -9,7 +9,7 @@
 
 namespace Fsilva\HttpMessage\Parser;
 
-use Psr\Http\Message\StreamableInterface;
+use Psr\Http\Message\StreamInterface;
 
 
 /**
@@ -21,18 +21,18 @@ abstract class AbstractParser implements ParserInterface
 {
 
     /**
-     * @var StreamableInterface The content stream
+     * @var StreamInterface The content stream
      */
     protected $content;
 
     /**
      * Sets the content to be parsed
      *
-     * @param StreamableInterface $content
+     * @param StreamInterface $content
      *
      * @return self
      */
-    public function setContent(StreamableInterface $content)
+    public function setContent(StreamInterface $content)
     {
         $this->content = $content;
         return $this;

@@ -10,7 +10,7 @@
 namespace Fsilva\HttpMessage;
 
 use Psr\Http\Message\MessageInterface;
-use Psr\Http\Message\StreamableInterface;
+use Psr\Http\Message\StreamInterface;
 use Fsilva\HttpMessage\Exception\MissingHeaderException;
 use Fsilva\HttpMessage\Exception\InvalidVersionException;
 use Fsilva\HttpMessage\Exception\InvalidArgumentException;
@@ -49,7 +49,7 @@ class Message implements MessageInterface
     /** @var string[]|array message's headers */
     protected $headers = [];
 
-    /** @var StreamableInterface */
+    /** @var StreamInterface */
     protected $body;
 
     /**
@@ -276,7 +276,7 @@ class Message implements MessageInterface
     /**
      * Gets the body of the message.
      *
-     * @return StreamableInterface Returns the body as a stream.
+     * @return StreamInterface Returns the body as a stream.
      */
     public function getBody()
     {
@@ -292,11 +292,11 @@ class Message implements MessageInterface
      * immutability of the message, and MUST return a new instance that has the
      * new body stream.
      *
-     * @param StreamableInterface $body Body.
+     * @param StreamInterface $body Body.
      * @return self
      * @throws \InvalidArgumentException When the body is not valid.
      */
-    public function withBody(StreamableInterface $body)
+    public function withBody(StreamInterface $body)
     {
         $message = clone($this);
         $message->body = $body;
@@ -358,5 +358,29 @@ class Message implements MessageInterface
         $value = is_string($value) ? [$value] : $value;
 
         return $value;
+    }
+
+    /**
+     * Retrieves a comma-separated string of the values for a single header.
+     *
+     * This method returns all of the header values of the given
+     * case-insensitive header name as a string concatenated together using
+     * a comma.
+     *
+     * NOTE: Not all header values may be appropriately represented using
+     * comma concatenation. For such headers, use getHeader() instead
+     * and supply your own delimiter when concatenating.
+     *
+     * If the header does not appear in the message, this method MUST return
+     * an empty string.
+     *
+     * @param string $name Case-insensitive header field name.
+     * @return string A string of values as provided for the given header
+     *    concatenated together using a comma. If the header does not appear in
+     *    the message, this method MUST return an empty string.
+     */
+    public function getHeaderLine($name)
+    {
+        // TODO: Implement getHeaderLine() method.
     }
 }

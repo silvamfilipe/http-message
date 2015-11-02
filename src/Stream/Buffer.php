@@ -9,7 +9,7 @@
 
 namespace Fsilva\HttpMessage\Stream;
 
-use Psr\Http\Message\StreamableInterface;
+use Psr\Http\Message\StreamInterface;
 
 /**
  * Provides a buffer stream that can be written to to fill a buffer, and read
@@ -21,7 +21,7 @@ use Psr\Http\Message\StreamableInterface;
  *
  * @package Fsilva\HttpMessage\Stream
  */
-class Buffer implements StreamableInterface
+class Buffer implements StreamInterface
 {
 
     /** @var int High water mark, defaults to 16384 */

@@ -9,15 +9,15 @@
 
 namespace Fsilva\HttpMessage;
 
-use Psr\Http\Message\StreamableInterface;
 use Fsilva\HttpMessage\Exception\InvalidArgumentException;
+use Psr\Http\Message\StreamInterface;
 
 /**
  * Implementation of PSR HTTP Streams
  *
  * @package Fsilva\HttpMessage
  */
-class Stream implements StreamableInterface
+class Stream implements StreamInterface
 {
 
     /**

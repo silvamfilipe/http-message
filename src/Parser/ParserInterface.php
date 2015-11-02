@@ -9,9 +9,9 @@
 
 namespace Fsilva\HttpMessage\Parser;
 
-use Psr\Http\Message\StreamableInterface;
 use Fsilva\HttpMessage\Exception\MissingContentException;
 use Fsilva\HttpMessage\Exception\ParsingFailureException;
+use Psr\Http\Message\StreamInterface;
 
 /**
  * Parsers are used to parse body data
@@ -37,9 +37,9 @@ interface ParserInterface
     /**
      * Sets the content to be parsed
      *
-     * @param StreamableInterface $content
+     * @param StreamInterface $content
      *
      * @return self
      */
-    public function setContent(StreamableInterface $content);
+    public function setContent(StreamInterface $content);
 }
